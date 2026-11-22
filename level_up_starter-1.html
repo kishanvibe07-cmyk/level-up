@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d18">
+<title>LEVEL UP — Real Life RPG</title>
+<style>
+:root{--bg:#080d18;--panel:#111b2c;--panel2:#17243a;--blue:#68b7ff;--cyan:#8be7ff;--muted:#9aabc1;--white:#f3f7ff;--line:#263852}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#1b3760 0,#080d18 48%);color:var(--white);font:16px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:760px;margin:auto;padding:22px 16px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-size:13px;letter-spacing:4px;color:var(--cyan);font-weight:800}.date{font-size:12px;color:var(--muted)}
+h1{font-size:clamp(30px,8vw,48px);margin:25px 0 4px;letter-spacing:1px}.sub{color:var(--muted);margin:0 0 20px}
+.panel{background:linear-gradient(145deg,#14243a,#0e1727);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 12px 35px #0004}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#0b1423;border:1px solid var(--line);border-radius:13px;padding:13px}.stat small{display:block;color:var(--muted);font-size:10px;letter-spacing:1px}.stat strong{display:block;font-size:25px;margin-top:5px}
+.bar{height:9px;background:#26364c;border-radius:20px;overflow:hidden;margin:13px 0 6px}.fill{height:100%;width:0;background:linear-gradient(90deg,#438dff,#8be7ff);transition:width .25s}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.section-title h2{font-size:18px;margin:0}.hint{font-size:12px;color:var(--muted)}
+.task{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #23334a}.task:first-of-type{border-top:0}.task input{width:20px;height:20px;accent-color:#69baff}.task .name{flex:1}.task .name b{display:block;font-size:14px}.task .name small{color:var(--muted);font-size:12px}.xp{font-size:12px;color:var(--cyan);white-space:nowrap}
+button{background:#19385c;color:#eaf6ff;border:1px solid #37638f;border-radius:11px;padding:11px 14px;font-weight:700;cursor:pointer}button:active{transform:scale(.98)}button.secondary{background:#101b2b;border-color:var(--line);color:var(--muted)}
+input[type=text]{width:100%;background:#091321;border:1px solid var(--line);border-radius:10px;padding:12px;color:white;margin:8px 0}
+.puzzle{font-size:15px;line-height:1.5}.feedback{font-size:13px;color:var(--cyan);min-height:20px;margin-top:8px}
+.footer{text-align:center;color:#71839c;font-size:11px;margin-top:24px}
+@media(max-width:420px){.stats{gap:7px}.stat{padding:10px}.stat strong{font-size:21px}.panel{padding:15px}}
+</style>
+</head>
+<body>
+<main>
+ <div class="top"><div class="brand">✦ THE SYSTEM</div><div class="date" id="today"></div></div>
+ <h1>LEVEL UP.</h1><p class="sub">Build yourself in real life. One mission at a time.</p>
+ <section class="panel">
+  <div class="section-title"><h2 id="rank">BEGINNER HUNTER</h2><span class="hint" id="levelText">LEVEL 1</span></div>
+  <div class="stats">
+   <div class="stat"><small>TOTAL XP</small><strong id="xp">0</strong></div>
+   <div class="stat"><small>MISSIONS</small><strong id="done">0/5</strong></div>
+   <div class="stat"><small>STREAK</small><strong id="streak">0 🔥</strong></div>
+  </div>
+  <div class="bar"><div class="fill" id="progress"></div></div>
+  <div class="hint" id="next">0 / 100 XP to next level</div>
+ </section>
+ <section class="panel">
+  <div class="section-title"><h2>⚔ DAILY MISSIONS</h2><span class="hint">Complete at your pace</span></div>
+  <div id="tasks"></div>
+  <p class="hint">Start small. Consistency matters more than intensity. Rest is part of progress.</p>
+ </section>
+ <section class="panel">
+  <div class="section-title"><h2>🧠 BRAIN TRAINING</h2><span class="hint">Today's riddle</span></div>
+  <p class="puzzle">I have keys but no locks. I have space but no room. You can enter, but you cannot go outside. What am I?</p>
+  <input id="answer" type="text" placeholder="Type your answer..." autocomplete="off">
+  <button onclick="checkAnswer()">Submit answer · +10 XP</button>
+  <div class="feedback" id="feedback"></div>
+ </section>
+ <section class="panel">
+  <div class="section-title"><h2>📈 YOUR REAL-LIFE RULE</h2></div>
+  <p class="puzzle">Your level is a reminder of effort, not your worth. Your body and abilities develop at different speeds. Never skip sleep, meals, recovery, or safety to earn XP.</p>
+  <button class="secondary" onclick="resetToday()">Reset today's missions</button>
+ </section>
+ <div class="footer">LEVEL UP · A personal growth project · Progress saved on this device</div>
+</main>
+<script>
+const missions=[
+ {id:"morning",name:"Morning reset",desc:"Make your bed and get ready for the day",xp:10},
+ {id:"study",name:"Learning session",desc:"Focus on learning for 25 minutes",xp:15},
+ {id:"move",name:"Move your body",desc:"Choose safe activity, sport, stretching or a walk",xp:15},
+ {id:"brain",name:"Train your brain",desc:"Try a puzzle, chess tactic or Sudoku",xp:10},
+ {id:"read",name:"Read & reflect",desc:"Read for 10 minutes or write a short journal entry",xp:10}
+];
+const today=new Date().toISOString().slice(0,10);
+let data=JSON.parse(localStorage.getItem("levelup-save")||"{}");
+if(data.date!==today){data.date=today;data.completed=[];data.puzzleDone=false;}
+data.totalXP=data.totalXP||0;data.streak=data.streak||0;
+function save(){localStorage.setItem("levelup-save",JSON.stringify(data));render();}
+function level(){return Math.floor(data.totalXP/100)+1;}
+function render(){
+ document.getElementById("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+ document.getElementById("xp").textContent=data.totalXP;
+ document.getElementById("done").textContent=data.completed.length+"/"+missions.length;
+ document.getElementById("streak").textContent=data.streak+" 🔥";
+ document.getElementById("levelText").textContent="LEVEL "+level();
+ const names=["BEGINNER HUNTER","DISCIPLINED SEEKER","RISING WARRIOR","ELITE LEARNER","MASTER OF HABITS"];
+ document.getElementById("rank").textContent=names[Math.min(level()-1,names.length-1)];
+ const into=data.totalXP%100;document.getElementById("progress").style.width=into+"%";
+ document.getElementById("next").textContent=into+" / 100 XP to next level";
+ document.getElementById("tasks").innerHTML=missions.map(m=>`<label class="task"><input type="checkbox" ${data.completed.includes(m.id)?"checked":""} onchange="toggle('${m.id}')"><span class="name"><b>${m.name}</b><small>${m.desc}</small></span><span class="xp">+${m.xp} XP</span></label>`).join("");
+}
+function toggle(id){const m=missions.find(x=>x.id===id);if(data.completed.includes(id)){data.completed=data.completed.filter(x=>x!==id);data.totalXP=Math.max(0,data.totalXP-m.xp);}else{data.completed.push(id);data.totalXP+=m.xp;}if(data.completed.length===missions.length)data.streak+=1;save();}
+function checkAnswer(){const a=document.getElementById("answer").value.trim().toLowerCase();const f=document.getElementById("feedback");if(data.puzzleDone){f.textContent="You already earned today's puzzle XP. Come back tomorrow!";return;}if(["keyboard","a keyboard"].includes(a)){data.puzzleDone=true;data.totalXP+=10;f.textContent="Correct! +10 XP. Keep learning.";save();}else{f.textContent="Not quite. Think about something you type on."}}
+function resetToday(){if(!confirm("Reset today's mission checks? This will remove today's mission XP."))return;const earned=missions.filter(m=>data.completed.includes(m.id)).reduce((s,m)=>s+m.xp,0);data.totalXP=Math.max(0,data.totalXP-earned);data.completed=[];save();}
+render();
+</script>
+</body>
+</html>
